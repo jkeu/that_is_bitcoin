@@ -203,6 +203,8 @@ func main() {
 
 你可以在 bitWallet 导入私钥 WIF，验证一下地址是不是跟我们生成的地址一样。
 
+完整代码请见 [Github](https://github.com/jkeu/that_is_bitcoin)
+
 如果你觉得这篇文章对你有帮助，欢迎你给我捐赠比特币！  
 ![btc-qrcode](https://jkeu374190052.files.wordpress.com/2019/01/1546697811.png)  
 3GcQRzfZ6pWwntYkJBBJsmVcENn7ZoM8Kt
