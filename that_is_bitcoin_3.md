@@ -55,16 +55,16 @@ func NewWallet() *Wallet {
 
 ````go
 func HashPubKey(pubKey []byte) []byte {
-    publicSHA256 := sha256.Sum256(pubKey)
+  publicSHA256 := sha256.Sum256(pubKey)
 
-    RIPEMD160Hasher := ripemd160.New()
-    _, err := RIPEMD160Hasher.Write(publicSHA256[:])
-    if err != nil {
-        log.Panic(err)
-    }
-    publicRIPEMD160 := RIPEMD160Hasher.Sum(nil)
+  RIPEMD160Hasher := ripemd160.New()
+  _, err := RIPEMD160Hasher.Write(publicSHA256[:])
+  if err != nil {
+    log.Panic(err)
+  }
+  publicRIPEMD160 := RIPEMD160Hasher.Sum(nil)
 
-    return publicRIPEMD160
+  return publicRIPEMD160
 }
 ````
 
@@ -126,29 +126,29 @@ func checksum(payload []byte) []byte {
 
 ````go
 func Base58Encode(b []byte) []byte {
-	x := new(big.Int)
-	x.SetBytes(b)
+  x := new(big.Int)
+  x.SetBytes(b)
 
-	answer := make([]byte, 0, len(b)*136/100)
-	for x.Cmp(bigZero) > 0 {
-		mod := new(big.Int)
-		x.DivMod(x, bigRadix, mod)
-		answer = append(answer, alphabet[mod.Int64()])
-	}
+  answer := make([]byte, 0, len(b)*136/100)
+  for x.Cmp(bigZero) > 0 {
+    mod := new(big.Int)
+    x.DivMod(x, bigRadix, mod)
+    answer = append(answer, alphabet[mod.Int64()])
+  }
 
-	for _, i := range b {
-		if i != 0 {
-			break
-		}
-		answer = append(answer, alphabetIdx0)
-	}
+  for _, i := range b {
+    if i != 0 {
+      break
+    }
+    answer = append(answer, alphabetIdx0)
+  }
 
-	alen := len(answer)
-	for i := 0; i < alen/2; i++ {
-		answer[i], answer[alen-1-i] = answer[alen-1-i], answer[i]
-	}
+  alen := len(answer)
+  for i := 0; i < alen/2; i++ {
+    answer[i], answer[alen-1-i] = answer[alen-1-i], answer[i]
+  }
 
-	return answer
+  return answer
 }
 ````
 
