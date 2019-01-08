@@ -68,7 +68,11 @@ func HashPubKey(pubKey []byte) []byte {
 }
 ````
 
+`公钥 Hash = RipeMD160(SHA256(公钥))`
+
 ## 加上地址版本和公钥 Hash 的校验数据
+
+`地址 = Base58(地址版本 + 公钥 Hash + 校验数据)`
 
 ### Legacy 版本
 
@@ -154,7 +158,7 @@ func Base58Encode(b []byte) []byte {
 
 ## 用私钥生成 WIF 格式显示
 
-`WIF = 0x08 + PrivateKey.D + 1 压缩位 + 4校验数据`
+`WIF = Base58(0x08 + PrivateKey.D + 1 压缩位 + 4校验数据)`
 
 非压缩 WIF 是 5 开头的，压缩 WIF 是 K 或 L 开头的。
 
