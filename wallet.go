@@ -34,7 +34,7 @@ func main() {
 	log.Println("Address Segwit:", string(myAddressSegWit))
 
 	myWif := myWallet.GetWif()
-	log.Println("Private:", string(myWif))
+	log.Println("Private WIF:", string(myWif))
 }
 
 // Wallet info
