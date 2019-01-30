@@ -46,7 +46,7 @@ https://chain.so/api/v2/get_tx_unspent/BTCTEST/mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzH
 可以得到未花费交易的 txid、交易序号 output_no 和解锁脚本 script_hex，把这 3 个数据组合起来成为一个 TxIn。
 
 ````
-thatbitcoin -unspent -address mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt
+jkeu$ ./thatbitcoin -unspent -address mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt
 ````
 
 ## 输出数据
@@ -62,7 +62,7 @@ thatbitcoin -unspent -address mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt
 我们把输入数据和输出数据组合成起来，补充上版本号、时间、数量等信息，就得到一个完整的未签名交易，把这个文件格式化为字符串数据保存到未签名文件 unsign.txn 中。
 
 ````
-thatbitcoin -unsign -from mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt -to mmp3fHyA9yxZzJG6484tmLdtKedXVWUwHg -value 10000 -out unsign.txn
+jkeu$ ./thatbitcoin -unsign -from mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt -to mmp3fHyA9yxZzJG6484tmLdtKedXVWUwHg -value 10000 -out ./unsign.txn
 ````
 
 ## 离线签名
@@ -77,7 +77,7 @@ thatbitcoin -unsign -from mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt -to mmp3fHyA9yxZzJG
 4. 重复以上三步直到所有 UTXO 签名完成。
 
 ````
-thatbitcoin -sign -key cNWQYbbHgXSpStVczVSL55dT8gyRCTfaMZhBnULrDunpQkEZ4WcK -in unsign.txn -dump signed.txn
+jkeu$ ./thatbitcoin -sign -key cNWQYbbHgXSpStVczVSL55dT8gyRCTfaMZhBnULrDunpQkEZ4WcK -in ./unsign.txn -dump ./signed.txn
 ````
 
 ## 广播交易
@@ -94,7 +94,7 @@ https://chain.so/api/v2/send_tx/BTCTEST
 
 
 ````
-thatbitcoin -broadcast -testnet -file signed.txn
+jkeu$ ./thatbitcoin -broadcast -testnet -file ./signed.txn
 ````
 
 
