@@ -45,6 +45,10 @@ https://chain.so/api/v2/get_tx_unspent/BTCTEST/mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzH
 
 可以得到未花费交易的 txid、交易序号 output_no 和解锁脚本 script_hex，把这 3 个数据组合起来成为一个 TxIn。
 
+````
+thatbitcoin -unspent -address mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt
+````
+
 ## 输出数据
 
 每次交易的输出，除了目标地址和目标数量外，还需要指定找零地址和找零数量。这是因为比特币的 UTXO 机制决定了每个交易都必须把输入的 UTXO 都消费完，不消费部分就是交易手续费。
@@ -53,9 +57,13 @@ https://chain.so/api/v2/get_tx_unspent/BTCTEST/mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzH
 
 ## 未签名数据
 
-为了保护私钥安全，通常我们会选择离线签名，所以我们先在一台在线的电脑中制作未签名数据，注意在制作为签名数据的过程中，不需要私钥参与。
+为了保护私钥安全，通常我们会选择离线签名，所以我们先在一台在线的电脑中制作未签名数据，注意在制作未签名数据的过程中，不需要私钥参与。
 
-我们把输入数据和输出数据组合成起来，补充上版本号、时间、数量等信息，就得到一个完整的未签名交易，把这个文件格式化未字符串数据保存到未签名文件 unsign.txn 中。
+我们把输入数据和输出数据组合成起来，补充上版本号、时间、数量等信息，就得到一个完整的未签名交易，把这个文件格式化为字符串数据保存到未签名文件 unsign.txn 中。
+
+````
+thatbitcoin -unsign -from mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzHt -to mmp3fHyA9yxZzJG6484tmLdtKedXVWUwHg -value 10000 -out unsign.txn
+````
 
 ## 离线签名
 
@@ -68,6 +76,10 @@ https://chain.so/api/v2/get_tx_unspent/BTCTEST/mgfL6c3g2vwn2KhE6nm3TSgxMyKsEGyzH
 3. 用签名数据替换输入数据中 UTXO 的解锁脚本；
 4. 重复以上三步直到所有 UTXO 签名完成。
 
+````
+thatbitcoin -sign -key cNWQYbbHgXSpStVczVSL55dT8gyRCTfaMZhBnULrDunpQkEZ4WcK -in unsign.txn -dump signed.txn
+````
+
 ## 广播交易
 
 把离线电脑中签名文件 signed.txn 用 U 盘复制到在线电脑中进行广播。
@@ -79,6 +91,12 @@ https://chain.so/api/v2/send_tx/BTCTEST
 还可以使用 Electrum -> Tools -> Load Transaction -> From file 进行广播。
 
 或者使用其他的网站进行广播 https://live.blockcypher.com/btc/pushtx
+
+
+````
+thatbitcoin -broadcast -testnet -file signed.txn
+````
+
 
 等待约 10 分钟直到交易被确认，恭喜你完成了一笔比特币转账交易。
 
