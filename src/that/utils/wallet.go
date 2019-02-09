@@ -44,18 +44,22 @@ func GenWallet(testnet bool) {
 
 	if !testnet {
 		params := ParamsMainNet
-		myMainNetLegacy := myWallet.GetAddressPubKey(&params)
-		log.Println("Legacy:", string(myMainNetLegacy))
-		myMainNetSegWit := myWallet.GetAddressScriptHash(&params)
-		log.Println("Segwit:", string(myMainNetSegWit))
+		myMainNetP2PKH := myWallet.GetAddressPubKeyHash(&params)
+		log.Println("P2PKH:", string(myMainNetP2PKH))
+		myMainNetP2SH := myWallet.GetAddressScriptHash(&params)
+		log.Println("P2SH:", string(myMainNetP2SH))
+		myMainNetP2WSH := myWallet.GetAddressWitnessScriptHash(&params)
+		log.Println("P2WSH:", string(myMainNetP2WSH))
 		myMainNetWif := myWallet.GetWif(&params)
 		log.Println("Private key:", string(myMainNetWif))
 	} else if testnet {
 		params := ParamsTestNet
-		myTestNetLegacy := myWallet.GetAddressPubKey(&params)
-		log.Println("TestNet Legacy:", string(myTestNetLegacy))
-		myTestNetSegwit := myWallet.GetAddressScriptHash(&params)
-		log.Println("TestNet Segwit:", string(myTestNetSegwit))
+		myTestNetP2PKH := myWallet.GetAddressPubKeyHash(&params)
+		log.Println("TestNet P2PKH:", string(myTestNetP2PKH))
+		myTestNetP2SH := myWallet.GetAddressScriptHash(&params)
+		log.Println("TestNet P2SH:", string(myTestNetP2SH))
+		myTestNetP2WSH := myWallet.GetAddressWitnessScriptHash(&params)
+		log.Println("TestNet P2WSH:", string(myTestNetP2WSH))
 		myTestNetWif := myWallet.GetWif(&params)
 		log.Println("Private key:", string(myTestNetWif))
 	}
@@ -77,8 +81,8 @@ func NewWallet() *Wallet {
 	return &wallet
 }
 
-// GetAddressPubKey gen bitcoin address
-func (w Wallet) GetAddressPubKey(params *NetParams) []byte {
+// GetAddressPubKeyHash gen bitcoin address : P2PKH
+func (w Wallet) GetAddressPubKeyHash(params *NetParams) []byte {
 	pubKeyHash := Hash160(w.PublicKey)
 
 	versionedPayload := append([]byte{params.Legacy}, pubKeyHash...)
@@ -90,20 +94,43 @@ func (w Wallet) GetAddressPubKey(params *NetParams) []byte {
 	return address
 }
 
-// GetAddressScriptHash gen bitcoin address script hash
-func (w Wallet) GetAddressScriptHash(params *NetParams) []byte {
+// GetAddressWitnessScriptHash gen bitcoin address script hash : P2WSH
+// OP_0 PushData(hash160)
+func (w Wallet) GetAddressWitnessScriptHash(params *NetParams) []byte {
 	pubKeyHash := Hash160(w.PublicKey)
-	op := []byte{byte(0x00), byte(0x14)}
-	pubKeyHash = append(op, pubKeyHash...)
-	pubKeyHash = Hash160(pubKeyHash)
+	op0 := []byte{byte(OpZero)}
+	redeemScript := append(op0, PushData(pubKeyHash)...)
+	addressHash := Hash160(redeemScript)
 
-	versionedPayload := append([]byte{params.Segwit}, pubKeyHash...)
+	versionedPayload := append([]byte{params.Segwit}, addressHash...)
 	checksum := Checksum(versionedPayload)
 
 	fullPayload := append(versionedPayload, checksum...)
 	address := Base58Encode(fullPayload)
 
 	return address
+}
+
+// GetAddressScriptHash gen bitcoin address script hash : P2SH
+// PushData(pubkey) OP_CHECKSIG
+func (w Wallet) GetAddressScriptHash(params *NetParams) []byte {
+	addressHash := Hash160(w.PayToScriptHashScript())
+
+	versionedPayload := append([]byte{params.Segwit}, addressHash...)
+	checksum := Checksum(versionedPayload)
+
+	fullPayload := append(versionedPayload, checksum...)
+	address := Base58Encode(fullPayload)
+
+	return address
+}
+
+// PayToScriptHashScript redeem script
+func (w Wallet) PayToScriptHashScript() []byte {
+	opCheckSig := []byte{byte(OpCheckSig)}
+	redeemScript := append(PushData(w.PublicKey), opCheckSig...)
+
+	return redeemScript
 }
 
 // GetWif gen private key wif format

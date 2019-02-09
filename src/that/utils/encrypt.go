@@ -171,6 +171,14 @@ func Checksum(payload []byte) []byte {
 	return secondSHA[:checksumLen]
 }
 
+// PushData len(data) + data
+func PushData(data []byte) []byte {
+	dlen := len(data)
+	op := []byte{byte(dlen)}
+	dataWithLen := append(op, data...)
+	return dataWithLen
+}
+
 // IsOdd doc
 func IsOdd(a *big.Int) bool {
 	return a.Bit(0) == 1
@@ -205,4 +213,19 @@ func GenerateNonce() [32]byte {
 func randInt(min int, max int) uint8 {
 	mrd.Seed(time.Now().UTC().UnixNano())
 	return uint8(min + mrd.Intn(max-min))
+}
+
+// BytesEqual tells whether a and b contain the same elements.
+// A nil argument is equivalent to an empty slice.
+func BytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		// log.Printf("debug, len(a) %d, len(b) %d\n", len(a), len(b))
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }

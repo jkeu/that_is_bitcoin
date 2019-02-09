@@ -14,6 +14,8 @@ import (
 )
 
 const (
+	// OpZero op_0
+	OpZero = 0x0
 	// OpDup opcode
 	OpDup = 0x76
 	// OpEqual opcode
@@ -247,17 +249,6 @@ func decodeRawTx(utx string) (*ThatTx, error) {
 }
 
 func signRawTx(tx *ThatTx, wif string) (*ThatTx, error) {
-	rawTransaction := tx.Serialize()
-	// SIGHASH_ALL
-	hashCodeType, err := hex.DecodeString("01000000")
-	if err != nil {
-		log.Fatal(err)
-	}
-	var rawTransactionBuffer bytes.Buffer
-	rawTransactionBuffer.Write(rawTransaction)
-	rawTransactionBuffer.Write(hashCodeType)
-	rawTransaction = rawTransactionBuffer.Bytes()
-
 	secp256k1.Start()
 	privateKeyBytes := Base58Decode(wif)
 	privateKeyBytes = privateKeyBytes[1 : len(privateKeyBytes)-4]
@@ -267,11 +258,79 @@ func signRawTx(tx *ThatTx, wif string) (*ThatTx, error) {
 		privateKeyBytes32[i] = privateKeyBytes[i]
 	}
 
-	//Get the raw public key
+	// Get the raw public key
 	publicKeyBytes, success := secp256k1.Pubkey_create(privateKeyBytes32, true)
 	if !success {
 		log.Fatal("Failed to convert private key to public key")
 	}
+
+	// generate redeem script
+	// mode-1 p2sh-segwit : OP_0 pushdata(hash160)
+	pubKeyHash := Hash160(publicKeyBytes)
+	Op0 := []byte{byte(OpZero)}
+	redeemP2WSH := append(Op0, PushData(pubKeyHash)...)
+	// mode-2 p2sh: pushdata(pubkey) OP_CHECKSIG
+	opCheckSig := []byte{byte(OpCheckSig)}
+	redeemP2SH := append(PushData(publicKeyBytes), opCheckSig...)
+	redeemScript := redeemP2SH
+
+	log.Println("# gen redeem script:", hex.EncodeToString(redeemScript))
+	isP2SH := false
+
+	for i, txIn := range tx.TxIn {
+		sigScript := txIn.SigScript
+		log.Println(i, "# txIn raw script:", hex.EncodeToString(sigScript))
+		OpFirst := sigScript[0]
+		if OpFirst == OpDup {
+			log.Println("# I am P2PKH Transaction.")
+			// P2PKH, script = OP_DUP OP_HASH160 PUSHDATA(address) OP_EQUALVERIFY OP_CHECKSIG
+			break
+		} else if OpFirst == OpHash160 {
+			// P2SH, single script = PUSHDATA(pubKey) OP_CHECKSIG
+			getHash := sigScript[2:22]
+			wantHash := Hash160(redeemP2SH)
+			// verify redeem script hash
+			if !BytesEqual(getHash, wantHash) {
+				log.Println("# I am P2WSH Transaction.")
+
+				// common error
+				newErr := fmt.Errorf("script signature not match, want %s but get %s",
+					hex.EncodeToString(wantHash), hex.EncodeToString(getHash))
+
+				// P2WSH not support yet
+				// P2WSH redeem script = OP_0 PUSHDATA(address)
+				wantHash = Hash160(redeemP2WSH)
+				if BytesEqual(getHash, wantHash) {
+					newErr = fmt.Errorf("Witness script signature not support yet")
+				}
+
+				return nil, newErr
+			}
+
+			log.Println("# I am P2SH Transaction.")
+			isP2SH = true
+			tx.TxIn[i].SigScript = redeemScript
+			break
+		} else {
+			newErr := fmt.Errorf("sign script not support %s",
+				hex.EncodeToString(sigScript))
+			return nil, newErr
+		}
+	}
+
+	rawTransaction := tx.Serialize()
+	log.Println("debug: txIn:", hex.EncodeToString(tx.TxIn[0].SigScript))
+	log.Println("debug: raw tx:", hex.EncodeToString(rawTransaction))
+
+	// SIGHASH_ALL
+	hashCodeType, err := hex.DecodeString("01000000")
+	if err != nil {
+		log.Fatal(err)
+	}
+	var rawTransactionBuffer bytes.Buffer
+	rawTransactionBuffer.Write(rawTransaction)
+	rawTransactionBuffer.Write(hashCodeType)
+	rawTransaction = rawTransactionBuffer.Bytes()
 
 	// Hash the raw transaction twice before the signing
 	shaHash := sha256.New()
@@ -317,10 +376,17 @@ func signRawTx(tx *ThatTx, wif string) (*ThatTx, error) {
 	buffer.WriteByte(signedTransactionLength)
 	buffer.Write(signedTransaction)
 	buffer.WriteByte(hashCodeType[0])
-	buffer.WriteByte(pubKeyLength)
-	buffer.Write(publicKeyBuffer.Bytes())
-
-	// todo: add redeemScript
+	if !isP2SH {
+		buffer.WriteByte(pubKeyLength)
+		buffer.Write(publicKeyBuffer.Bytes())
+	} else if isP2SH {
+		// add redeemScript
+		var redeemScriptBuffer bytes.Buffer
+		redeemScriptBuffer.Write(redeemScript)
+		redeemLength := byte(len(redeemScriptBuffer.Bytes()))
+		buffer.WriteByte(redeemLength)
+		buffer.Write(redeemScriptBuffer.Bytes())
+	}
 
 	scriptSig := buffer.Bytes()
 
@@ -335,11 +401,12 @@ func signRawTx(tx *ThatTx, wif string) (*ThatTx, error) {
 }
 
 func createRawTx(from string, to string, satoshis int64) (*ThatTx, error) {
-	if IsP2SH(from) {
-		newErr := fmt.Errorf("%s SegWit-P2SH signature not support", from)
-		return nil, newErr
-	}
-
+	/*
+		if IsP2SH(from) {
+			newErr := fmt.Errorf("%s SegWit-P2SH signature not support", from)
+			return nil, newErr
+		}
+	*/
 	utxos, err := blockchain.GetUTXOChainSo(from)
 	if err != nil {
 		newErr := fmt.Errorf("blockchain.GetUTXOChainSo error:%s", err)
