@@ -24,7 +24,8 @@ def genAccount(root, path, netcode):
     key = master.subkey_for_path(path)
     key._netcode = netcode
     pubkey = key.wallet_key()
-    return pubkey
+    prvkey = key.wallet_key(as_private=True)
+    return pubkey, prvkey
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -52,9 +53,10 @@ if __name__ == '__main__':
         netcode = 'BTC'
 
     master = genRoot(words, passphrase, netcode, True)
-    account = genAccount(master, path, netcode)
+    account, prvkey = genAccount(master, path, netcode)
 
     print("Seed:", words)
     print("Rootkey:", master)
     print("AccountPath:", path)
+    print("AccountPrivate:", prvkey)
     print("Account:", account)

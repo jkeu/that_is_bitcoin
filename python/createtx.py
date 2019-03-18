@@ -5,8 +5,9 @@ import argparse
 
 from pycoin.services.chain_so import ChainSoProvider
 from pycoin.tx.tx_utils import create_tx, sign_tx
+from pycoin.tx.Tx import Tx
 
-def genTx(fromAddress, toAddress, netcode, fromWif):
+def genTx(fromAddress, toAddress, netcode):
     b = ChainSoProvider(netcode)
     spendables = b.spendables_for_address(fromAddress)
     if not spendables:
@@ -18,20 +19,15 @@ def genTx(fromAddress, toAddress, netcode, fromWif):
     print('ToAddress:', toAddress)
 
     tx = create_tx(spendables, [toAddress])
-    tx.set_unspents(spendables)
-    print('TxCreated:', repr(tx))
-    print('TxUnsign:', tx.as_hex())
+    print('TxRaw   :', tx.as_hex(include_unspents=True))
 
-    sign_tx(tx, wifs=[fromWif])
-
-    return tx.as_hex()
+    return tx.as_hex(include_unspents=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', dest='netcode', default='BTC', help='BTC/XTN/LTC/DASH, default is BTC')
     parser.add_argument('fromAddress', help='transfer from address')
     parser.add_argument('-t', dest='toAddress', help='transfer to address')
-    parser.add_argument('-w', dest='fromWif', help='from address wif')
     args = parser.parse_args()
 
     codePath = {
@@ -43,7 +39,6 @@ if __name__ == '__main__':
         'BSV' : '44H/236H/0H',
     }
 
-    fromWif = args.fromWif
     fromAddress = args.fromAddress
     toAddress = args.toAddress
     netcode = args.netcode
@@ -54,5 +49,5 @@ if __name__ == '__main__':
     if netcode == 'BCH' or netcode == 'BSV':
         netcode = 'BTC'
 
-    rawTx = genTx(fromAddress, toAddress, netcode, fromWif)
+    rawTx = genTx(fromAddress, toAddress, netcode)
     print('Tx:', rawTx)
