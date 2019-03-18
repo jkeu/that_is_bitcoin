@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', dest='netcode', default='BTC', help='BTC/XTN/LTC/DASH, default is BTC')
     parser.add_argument('prvkey', help='account private key')
     parser.add_argument('-s', dest='segwit', action='store_true', help='segwit address for BTC/XTN/LTC')
+    parser.add_argument('-i', dest='fromIndex', default=0, help='path from 0/i, default 0')
     args = parser.parse_args()
 
     codePath = {
@@ -39,6 +40,7 @@ if __name__ == '__main__':
     segwit = args.segwit
     account = args.prvkey
     netcode = args.netcode
+    index = int(args.fromIndex)
     if netcode not in codePath:
         parser.print_help()
         exit()
@@ -48,7 +50,7 @@ if __name__ == '__main__':
 
     print("Account:", account)
     
-    for i in range(0, 10):
+    for i in range(index, index + 10):
         path = '0/' + str(i)
         address, wif = genAddress(account, path, netcode, segwit)
         print(path, ":", address, wif)
