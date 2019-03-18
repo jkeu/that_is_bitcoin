@@ -9,11 +9,12 @@ from pycoin.tx.Tx import Tx, SIGHASH_ALL
 from pycoin.key.Key import Key
 from pycoin.tx.pay_to.ScriptPayToAddressWit import ScriptPayToAddressWit
 from pycoin.ui import address_for_pay_to_script, script_obj_from_address
-from pycoin.serialize import h2b_rev
+from pycoin.serialize import h2b_rev, b2h_rev
 from pycoin.tx.TxIn import TxIn
 from pycoin.tx.TxOut import TxOut
 from pycoin.tx.Spendable import Spendable
 from pycoin.tx.pay_to import build_hash160_lookup, build_p2sh_lookup
+from pycoin.tx.script import tools
 
 NET_CODE = 'XTN'
 
@@ -63,7 +64,8 @@ def spend_sh_fund(tx_ins, wif_keys, tx_outs):
 
     _txs_out = []
     for balance, receiver_address in tx_outs:
-        _txs_out.append(TxOut(balance, script_obj_from_address(receiver_address, netcodes=[NET_CODE]).script()))
+        # _txs_out.append(TxOut(balance, script_obj_from_address(receiver_address, netcodes=[NET_CODE]).script()))
+        _txs_out.append(TxOut(balance, receiver_address))
 
     version, lock_time = 1, 0
     tx = Tx(version, _txs_in, _txs_out, lock_time)
@@ -84,14 +86,41 @@ def signTxSegwit(txHex, wif_key):
     tx = Tx.from_hex(txHex)
     address, redeem = pkh_segwit_address_from_wif(wif_key)
     print(address, redeem)
+    print('unspents:', tx.unspents)
+    amounts = []
+    for uns in tx.unspents:
+        # print('\tuns:', uns)
+        # amount += uns.coin_value
+        amounts.append(uns.coin_value)
     
+    print('amounts:', amounts)
     print('tx:', repr(tx))
+    print('txIn:', tx.TxIn)
+    tx_ins = []
+    idx = 0
+    for txIn in tx.txs_in:
+        print(txIn)
+        print(b2h_rev(txIn.previous_hash), txIn.previous_index)
+        amount = amounts[idx]
+        newTxIn = (b2h_rev(txIn.previous_hash), txIn.previous_index, amount, address, redeem)
+        tx_ins.append(newTxIn)
+        idx += 1
 
-    tx_ins = [('501fb0d89c3ae82a0c8971c1ff9c8f79f3235be2049e3bf45aa4b7099347bf4a', 0, 1000000,
-               '2N7x1K4xpHdazzWhSnSNfoqj369bfu5gqF7', '0014035568a6faa755c17337a30896db68837ff49731')
-              ]
+    print(tx_ins)
+    # tx_ins = [('501fb0d89c3ae82a0c8971c1ff9c8f79f3235be2049e3bf45aa4b7099347bf4a', 0, 1000000,
+    #           '2N7x1K4xpHdazzWhSnSNfoqj369bfu5gqF7', '0014035568a6faa755c17337a30896db68837ff49731')
+    #          ]
     in_keys = [wif_key]
-    tx_outs = [(990000, 'mqswKFc8VTMtF986xfQKBHaQoh42P4c1gi')]
+
+    tx_outs = []
+    for txOut in tx.txs_out:
+        newTxOut = (txOut.coin_value, txOut.script)
+        # newTxOut = (txOut.coin_value, tools.disassemble(txOut.script))
+        # newTxOut = (txOut.coin_value, '2N7x1K4xpHdazzWhSnSNfoqj369bfu5gqF7')
+        tx_outs.append(newTxOut)
+
+    # tx_outs = [(990000, 'mqswKFc8VTMtF986xfQKBHaQoh42P4c1gi')]
+    print(tx_outs)
 
     raw_hex, tx_id = spend_sh_fund(tx_ins, in_keys, tx_outs)
     print('signed raw hex:')
@@ -101,18 +130,34 @@ def signTxSegwit(txHex, wif_key):
 
     return raw_hex
 
+def signTxSegwit2(txHex, wif_key):
+    tx = Tx.from_hex(txHex)
+
+    address, redeem = pkh_segwit_address_from_wif(wif_key)
+    in_keys = [wif_key]
+
+    hash160_lookup = build_hash160_lookup([Key.from_text(wif).secret_exponent() for wif in in_keys])
+
+    for i in range(0, len(tx.txs_in)):
+        p2sh_lookup = build_p2sh_lookup([binascii.unhexlify(redeem)])
+        tx.sign_tx_in(hash160_lookup, i, tx.unspents[i].script, hash_type=SIGHASH_ALL, p2sh_lookup=p2sh_lookup)
+
+    return tx.as_hex()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('txHex', help='unsigned tx hex')
     parser.add_argument('-w', dest='fromWif', help='from address wif')
+    parser.add_argument('-s', dest='segwit', action='store_true', help='segwit signature for BTC/XTN/LTC')
     args = parser.parse_args()
 
     txHex = args.txHex
     fromWif = args.fromWif
 
-    # signedTx = signTxLegacy(txHex, fromWif)
-    # print('TxSigned:', signedTx)
+    if not args.segwit:
+        signedTx = signTxLegacy(txHex, fromWif)
+    else:
+        signedTx = signTxSegwit2(txHex, fromWif)
 
-    signedTxSegwit = signTxSegwit(txHex, fromWif)
-    print('TxSignedSegwit:', signedTxSegwit)
+    print('TxSigned:', signedTx)
 

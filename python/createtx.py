@@ -16,6 +16,9 @@ def genTx(fromAddress, toAddress, netcode):
 
     print('FromAddress:', fromAddress)
     print('Spending:', spendables)
+    for sp in spendables:
+        print('\tsp:', sp.coin_value)
+
     print('ToAddress:', toAddress)
 
     tx = create_tx(spendables, [toAddress])
