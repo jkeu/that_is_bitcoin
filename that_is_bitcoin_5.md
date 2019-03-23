@@ -74,7 +74,7 @@ Seed: online dilemma food relax tip visual dismiss input purpose flip pilot gold
 Rootkey: xprv9s21ZrQH143K3yjczqoyXUUuBKsbEJwnMXPYYMJLdqRf1ZHzDscR6pfk9S1HCZRDYyPF81rVGxvqHh4nwqN4RPA4s2qQthPxQ5SoukqVwjt
 ```
 
-備份好種子或者私鑰，下一篇告訴你怎麼使用私鑰生成地址。
+備份好種子或者私鑰，下篇告訴你怎麼使用主私鑰生成帳戶公鑰。
 
 如果你觉得这篇文章对你有帮助，欢迎你给我捐赠比特币！  
 ![btc-qrcode](https://jkeu374190052.files.wordpress.com/2019/01/1546697811.png)  
