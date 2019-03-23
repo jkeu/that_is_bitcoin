@@ -71,3 +71,7 @@ Rootkey: xprv9s21ZrQH143K3yjczqoyXUUuBKsbEJwnMXPYYMJLdqRf1ZHzDscR6pfk9S1HCZRDYyP
 ```
 
 備份好種子或者私鑰，下一篇告訴你怎麼使用私鑰生成地址。
+
+如果你觉得这篇文章对你有帮助，欢迎你给我捐赠比特币！  
+![btc-qrcode](https://jkeu374190052.files.wordpress.com/2019/01/1546697811.png)  
+3GcQRzfZ6pWwntYkJBBJsmVcENn7ZoM8Kt
